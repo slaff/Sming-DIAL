@@ -83,7 +83,6 @@ private:
 
 	Url descriptionUrl;
 	Url applicationUrl;
-	UPnP::ServiceUrn searchType;
 	AppMap apps; // <<< list of invoked apps
 };
 

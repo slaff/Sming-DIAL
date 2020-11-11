@@ -17,7 +17,7 @@ void Client::onDescription(HttpConnection& connection, XML::Document& descriptio
 		applicationUrl = url;
 	}
 
-	debug_d("Found DIAL device with searchType: %s", toString(searchType).c_str());
+	debug_d("Found DIAL device.");
 	if(callback) {
 		callback(*this, connection, description);
 	}
