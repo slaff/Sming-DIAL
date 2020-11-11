@@ -27,7 +27,7 @@ bool Client::connect(Connected callback)
 {
 	UPnP::ServiceUrn urn(domain, service, version);
 	return beginSearch(urn, [this, callback](HttpConnection& connection, XML::Document& description) {
-		callback(*this, connection, description);
+		onDescription(connection, description, callback);
 	});
 }
 
