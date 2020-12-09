@@ -40,7 +40,7 @@ constexpr uint8_t version{1};
 class Client : public UPnP::ControlPoint
 {
 public:
-	using Connected = Delegate<void(Client&, HttpConnection& connection, const XML::Document& description)>;
+	using Connected = Delegate<void(Client&, HttpConnection& connection, const XML::Document* description)>;
 
 	using ControlPoint::ControlPoint;
 
@@ -79,7 +79,7 @@ protected:
 private:
 	using AppMap = ObjectMap<String, App>;
 
-	void onDescription(HttpConnection& connection, XML::Document& description, Connected callback);
+	void onDescription(HttpConnection& connection, XML::Document* description, Connected callback);
 
 	Url descriptionUrl;
 	Url applicationUrl;
