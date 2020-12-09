@@ -1,49 +1,42 @@
 #include "Client.h"
-
-#include <Network/SSDP/Server.h>
-#include <Network/UPnP/DeviceHost.h>
+#include <FlashString/Vector.hpp>
 
 namespace Dial
 {
-DEFINE_FSTR(domain, "dial-multiscreen-org")
-DEFINE_FSTR(service, "dial")
+using dial1 = UPnP::dial_multiscreen_org::device::dial1;
 
-void Client::onDescription(HttpConnection& connection, XML::Document* description, Connected callback)
+const UPnP::ObjectClass Client::class_ PROGMEM = {
+	.kind_ = Urn::Kind::device,
+	.version_ = 1,
+	.domain_ = dial1::class_.domain_,
+	.type_ = dial1::class_.type_,
+	.createObject_ = createObject,
+	{.device_ = dial1::class_.device_},
+};
+
+DEFINE_FSTR_VECTOR_LOCAL(classes, UPnP::ObjectClass, &Client::class_)
+
+bool discover(UPnP::ControlPoint& controlPoint, Client::Discovered callback)
 {
-	descriptionUrl = connection.getRequest()->uri;
-	auto response = connection.getResponse();
-	String url = response->headers[_F("Application-URL")];
-	if(url) {
-		applicationUrl = url;
-	}
-
-	debug_d("Found DIAL device.");
-	if(callback) {
-		callback(*this, connection, description);
-	}
+	UPnP::ControlPoint::registerClasses(*Client::class_.domain_, classes);
+	return controlPoint.beginSearch(callback);
 }
 
-bool Client::connect(Connected callback)
+void Client::onConnected(HttpConnection& connection)
 {
-	ServiceUrn urn(domain, service, version);
-	return beginSearch(urn, [this, callback](HttpConnection& connection, XML::Document* description) {
-		onDescription(connection, description, callback);
-	});
-}
-
-bool Client::connect(const Url& descriptionUrl, Connected callback)
-{
-	debug_d("Fetching '%s'", descriptionUrl.toString().c_str());
-	return requestDescription(descriptionUrl, [this, callback](HttpConnection& connection, XML::Document* description) {
-		onDescription(connection, description, callback);
-	});
+	String url = connection.getResponse()->headers[_F("Application-URL")];
+	// Make sure url has trailing /
+	if(!url.endsWith('/')) {
+		url += '/';
+	}
+	applicationUrl = url;
 }
 
 App& Client::getApp(const String& applicationId)
 {
 	AppMap::Value app = apps[applicationId];
 	if(!app) {
-		app = new App(*this, applicationId, applicationUrl);
+		app = new App(*this, applicationId);
 	}
 
 	return *app;

@@ -19,11 +19,9 @@
 
 #pragma once
 
-#include <Data/CStringArray.h>
 #include <Network/UPnP/ControlPoint.h>
+#include <Network/UPnP/dial-multiscreen-org/device/dial1.h>
 #include "App.h"
-
-using namespace rapidxml;
 
 /** @defgroup   DIAL client
  *  @brief      Provides DIAL client
@@ -33,34 +31,24 @@ using namespace rapidxml;
 
 namespace Dial
 {
-DECLARE_FSTR(domain)
-DECLARE_FSTR(service)
-constexpr uint8_t version{1};
-
-class Client : public UPnP::ControlPoint
+class Client : public UPnP::dial_multiscreen_org::device::dial1
 {
 public:
-	using Connected = Delegate<void(Client&, HttpConnection& connection, const XML::Document* description)>;
+	using dial1::dial1;
 
-	using ControlPoint::ControlPoint;
+	using Discovered = Delegate<bool(Client&)>;
 
-	/**
-	 * @brief Searches for a DIAL device
-	 * @param callback will be called once such a device is auto-discovered
-	 *
-	 * @retval true when the connect request can be started
-	 */
-	bool connect(Connected callback);
+	static const UPnP::ObjectClass class_;
 
-	/**
-	 * @brief Directly connects to a device's description xml URL.
-	 * @param descriptionUrl the full URL where a description XML can be found.
-	 * 		  For example: http://192.168.22.222:55000/nrc/ddd.xml";
-	 * @param callback will be called once the XML is fetched
-	 *
-	 * @retval true when the connect request can be started
-	 */
-	bool connect(const Url& descriptionUrl, Connected callback);
+	const UPnP::ObjectClass& getClass() const override
+	{
+		return class_;
+	}
+
+	static UPnP::Object* createObject(UPnP::DeviceControl* owner)
+	{
+		return new Client(owner);
+	}
 
 	/**
 	 * @brief Get application object by name
@@ -70,21 +58,26 @@ public:
 	 */
 	App& getApp(const String& applicationId);
 
-protected:
-	Url getDescriptionUrl()
+	bool sendRequest(HttpRequest* request)
 	{
-		return descriptionUrl;
+		return controlPoint().sendRequest(request);
+	}
+
+	void onConnected(HttpConnection& connection) override;
+
+	Url getApplicationUrl() const
+	{
+		return applicationUrl;
 	}
 
 private:
 	using AppMap = ObjectMap<String, App>;
 
-	void onDescription(HttpConnection& connection, XML::Document* description, Connected callback);
-
-	Url descriptionUrl;
 	Url applicationUrl;
 	AppMap apps; // <<< list of invoked apps
 };
+
+bool discover(UPnP::ControlPoint& controlPoint, Client::Discovered callback);
 
 } // namespace Dial
 

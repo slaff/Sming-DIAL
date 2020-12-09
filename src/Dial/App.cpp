@@ -3,10 +3,16 @@
 
 namespace Dial
 {
+HttpRequest* App::createApplicationRequest()
+{
+	auto url = client.getApplicationUrl();
+	url.Path += name;
+	return new HttpRequest(url);
+}
+
 bool App::status(ResponseCallback onResponse)
 {
-	auto request = new HttpRequest(getApplicationUrl());
-	request->method = HTTP_GET;
+	auto request = createApplicationRequest();
 	if(onResponse) {
 		request->onRequestComplete([onResponse, this](HttpConnection& connection, bool successful) -> int {
 			onResponse(*this, *(connection.getResponse()));
@@ -37,15 +43,9 @@ bool App::sendRunRequest(HttpRequest* request, ResponseCallback onResponse)
 	return client.sendRequest(request);
 }
 
-bool App::run(ResponseCallback onResponse)
-{
-	auto request = new HttpRequest(getApplicationUrl());
-	return sendRunRequest(request, onResponse);
-}
-
 bool App::run(const String& body, MimeType mime, ResponseCallback onResponse)
 {
-	auto request = new HttpRequest(getApplicationUrl());
+	auto request = createApplicationRequest();
 	request->headers[HTTP_HEADER_CONTENT_TYPE] = toString(mime);
 	if(body.length() != 0) {
 		request->setBody(body);
@@ -56,7 +56,7 @@ bool App::run(const String& body, MimeType mime, ResponseCallback onResponse)
 
 bool App::run(const HttpParams& params, ResponseCallback onResponse)
 {
-	auto request = new HttpRequest(getApplicationUrl());
+	auto request = createApplicationRequest();
 	request->postParams = params;
 	return sendRunRequest(request, onResponse);
 }
