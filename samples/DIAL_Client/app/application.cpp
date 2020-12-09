@@ -1,5 +1,4 @@
 #include <SmingCore.h>
-#include <Network/UPnP/DeviceHost.h>
 #include <Dial/Client.h>
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
@@ -39,11 +38,16 @@ void onStatus(Dial::App& app, HttpResponse& response)
 	app.run(params, onRun);
 }
 
-void onConnected(Dial::Client& client, HttpConnection& connection, const XML::Document& description)
+void onConnected(Dial::Client& client, HttpConnection& connection, const XML::Document* description)
 {
+	if(description == nullptr) {
+		Serial.println(F("Search failed"));
+		return;
+	}
+
 	Serial.println(_F("New DIAL device found: "));
 
-	auto node = XML::getNode(description, F("/device/friendlyName"));
+	auto node = XML::getNode(*description, F("/device/friendlyName"));
 	if(node == nullptr) {
 		Serial.println(_F("UNEXPECTED! friendlyName missing from device description"));
 	} else {
@@ -54,7 +58,7 @@ void onConnected(Dial::Client& client, HttpConnection& connection, const XML::Do
 
 #if DEBUG_VERBOSE_LEVEL == DBG
 	Serial.println();
-	XML::serialize(description, Serial, true);
+	XML::serialize(*description, Serial, true);
 	Serial.println();
 #endif
 
@@ -66,11 +70,6 @@ void connectOk(IpAddress ip, IpAddress mask, IpAddress gateway)
 {
 	Serial.print(_F("I'm CONNECTED to "));
 	Serial.println(ip);
-
-	if(!UPnP::deviceHost.begin()) {
-		debug_e("UPnP initialisation failed");
-		return;
-	}
 
 	/* The command below will use UPnP to auto-discover a smart monitor/TV */
 	client.connect(onConnected);

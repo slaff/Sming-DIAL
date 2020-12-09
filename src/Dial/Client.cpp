@@ -8,7 +8,7 @@ namespace Dial
 DEFINE_FSTR(domain, "dial-multiscreen-org")
 DEFINE_FSTR(service, "dial")
 
-void Client::onDescription(HttpConnection& connection, XML::Document& description, Connected callback)
+void Client::onDescription(HttpConnection& connection, XML::Document* description, Connected callback)
 {
 	descriptionUrl = connection.getRequest()->uri;
 	auto response = connection.getResponse();
@@ -25,8 +25,8 @@ void Client::onDescription(HttpConnection& connection, XML::Document& descriptio
 
 bool Client::connect(Connected callback)
 {
-	UPnP::ServiceUrn urn(domain, service, version);
-	return beginSearch(urn, [this, callback](HttpConnection& connection, XML::Document& description) {
+	ServiceUrn urn(domain, service, version);
+	return beginSearch(urn, [this, callback](HttpConnection& connection, XML::Document* description) {
 		onDescription(connection, description, callback);
 	});
 }
@@ -34,7 +34,7 @@ bool Client::connect(Connected callback)
 bool Client::connect(const Url& descriptionUrl, Connected callback)
 {
 	debug_d("Fetching '%s'", descriptionUrl.toString().c_str());
-	return requestDescription(descriptionUrl, [this, callback](HttpConnection& connection, XML::Document& description) {
+	return requestDescription(descriptionUrl, [this, callback](HttpConnection& connection, XML::Document* description) {
 		onDescription(connection, description, callback);
 	});
 }
