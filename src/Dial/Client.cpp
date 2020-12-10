@@ -3,22 +3,22 @@
 
 namespace Dial
 {
-using dial1 = UPnP::dial_multiscreen_org::device::dial1;
+DEFINE_FSTR_LOCAL(domain, "dial-multiscreen-org")
+DEFINE_FSTR_LOCAL(type, "dial")
 
-const UPnP::ObjectClass Client::class_ PROGMEM = {
+constexpr UPnP::ObjectClass Client::class_ PROGMEM = {
 	.kind_ = Urn::Kind::device,
 	.version_ = 1,
-	.domain_ = dial1::class_.domain_,
-	.type_ = dial1::class_.type_,
+	.domain_ = &domain,
+	.type_ = &type,
 	.createObject_ = createObject,
-	{.device_ = dial1::class_.device_},
 };
 
 DEFINE_FSTR_VECTOR_LOCAL(classes, UPnP::ObjectClass, &Client::class_)
 
 bool discover(UPnP::ControlPoint& controlPoint, Client::Discovered callback)
 {
-	UPnP::ControlPoint::registerClasses(*Client::class_.domain_, classes);
+	UPnP::ControlPoint::registerClasses(domain, classes);
 	return controlPoint.beginSearch(callback);
 }
 

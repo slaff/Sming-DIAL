@@ -20,7 +20,6 @@
 #pragma once
 
 #include <Network/UPnP/ControlPoint.h>
-#include <Network/UPnP/dial-multiscreen-org/device/dial1.h>
 #include "App.h"
 
 /** @defgroup   DIAL client
@@ -31,10 +30,10 @@
 
 namespace Dial
 {
-class Client : public UPnP::dial_multiscreen_org::device::dial1
+class Client : public UPnP::DeviceControl
 {
 public:
-	using dial1::dial1;
+	using DeviceControl::DeviceControl;
 
 	using Discovered = Delegate<bool(Client&)>;
 
