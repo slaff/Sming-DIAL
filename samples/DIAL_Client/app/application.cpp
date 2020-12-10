@@ -82,6 +82,7 @@ void init()
 	// Station - WiFi client
 	WifiStation.enable(true);
 	WifiStation.config(F(WIFI_SSID), F(WIFI_PWD));
+	WifiAccessPoint.enable(false, false);
 
 	// Set callback that should be triggered when we have assigned IP
 	WifiEvents.onStationGotIP(connectOk);
