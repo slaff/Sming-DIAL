@@ -39,11 +39,16 @@ class App
 public:
 	using ResponseCallback = Delegate<void(App& app, HttpResponse& response)>;
 
-	App(Client& client, const String& name, const Url& appsUrl) : client(client), name(name), appsUrl(appsUrl)
+	App(Client& client, const String& name) : client(client), name(name)
 	{
 	}
 
-	String getName()
+	Client& getClient() const
+	{
+		return client;
+	}
+
+	String getName() const
 	{
 		return name;
 	}
@@ -53,7 +58,10 @@ public:
 	/**
 	 *
 	 */
-	bool run(ResponseCallback onResponse = nullptr);
+	bool run(ResponseCallback onResponse = nullptr)
+	{
+		return sendRunRequest(createApplicationRequest(), onResponse);
+	}
 
 	bool run(const String& body, MimeType mime, ResponseCallback onResponse = nullptr);
 
@@ -63,18 +71,10 @@ public:
 
 private:
 	bool sendRunRequest(HttpRequest* request, ResponseCallback onResponse);
-
-	Url getApplicationUrl()
-	{
-		Url url{appsUrl};
-		url.Path += '/';
-		url.Path += name;
-		return url;
-	}
+	HttpRequest* createApplicationRequest();
 
 	Client& client;
 	String name;
-	Url appsUrl;
 	String instanceUrl;
 };
 

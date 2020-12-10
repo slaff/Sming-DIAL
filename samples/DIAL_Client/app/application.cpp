@@ -7,7 +7,7 @@
 #define WIFI_PWD "PleaseEnterPass"
 #endif
 
-static Dial::Client client(4098);
+static UPnP::ControlPoint controlPoint;
 
 void onRun(Dial::App& app, HttpResponse& response)
 {
@@ -26,9 +26,11 @@ void onRun(Dial::App& app, HttpResponse& response)
 void onStatus(Dial::App& app, HttpResponse& response)
 {
 	if(!response.isSuccess()) {
-		Serial.print(_F("Error locating '"));
+		Serial.print(_F("Error locating application '"));
 		Serial.print(app.getName());
-		Serial.print(_F("' application: "));
+		Serial.print(_F("' on device '"));
+		Serial.print(app.getClient().friendlyName());
+		Serial.print("': ");
 		Serial.println(toString(response.code));
 		return;
 	}
@@ -38,32 +40,21 @@ void onStatus(Dial::App& app, HttpResponse& response)
 	app.run(params, onRun);
 }
 
-void onConnected(Dial::Client& client, HttpConnection& connection, const XML::Document* description)
+void discoverDialDevices()
 {
-	if(description == nullptr) {
-		Serial.println(F("Search failed"));
-		return;
-	}
-
-	Serial.println(_F("New DIAL device found: "));
-
-	auto node = XML::getNode(*description, F("/device/friendlyName"));
-	if(node == nullptr) {
-		Serial.println(_F("UNEXPECTED! friendlyName missing from device description"));
-	} else {
+	Dial::discover(controlPoint, [](Dial::Client& client) {
+		Serial.print(_F("New DIAL device found, friendly name '"));
 		Serial.print(_F("Friendly name '"));
-		Serial.print(node->value());
-		Serial.println('\'');
-	}
+		Serial.print(client.friendlyName());
+		Serial.print(_F("', url "));
+		Serial.println(client.getApplicationUrl().toString());
 
-#if DEBUG_VERBOSE_LEVEL == DBG
-	Serial.println();
-	XML::serialize(*description, Serial, true);
-	Serial.println();
-#endif
+		auto& app = client.getApp("YouTube");
+		app.status(onStatus);
 
-	auto& app = client.getApp("YouTube");
-	app.status(onStatus);
+		// Keep this device
+		return true;
+	});
 }
 
 void connectOk(IpAddress ip, IpAddress mask, IpAddress gateway)
@@ -71,15 +62,7 @@ void connectOk(IpAddress ip, IpAddress mask, IpAddress gateway)
 	Serial.print(_F("I'm CONNECTED to "));
 	Serial.println(ip);
 
-	/* The command below will use UPnP to auto-discover a smart monitor/TV */
-	client.connect(onConnected);
-
-	/* Alternatevely one can use the commands below when auto-discovery is not working */
-	/*
-	Url descriptionUrl{"http://192.168.22.222:55000/nrc/ddd.xml"};
-
-	client.connect(descriptionUrl, onConnected);
-	*/
+	discoverDialDevices();
 }
 
 void connectFail(const String& ssid, MacAddress bssid, WifiDisconnectReason reason)
