@@ -15,29 +15,41 @@ Using
 1. Add ``COMPONENT_DEPENDS += DIAL`` to your application componenent.mk file.
 2. Add these lines to your application::
 
-   #include <Dial/Client.h>
+      #include <Dial/Client.h>
 
-   static Dial::Client client;
+      static UPnP::ControlPoint controlPoint;
+      static Dial::Client* myClient;
 
-   void onConnected(Dial::Client& client, const XML::Document& doc, const HttpHeaders& headers)
-   {
-      // Get an app and do something...
-   }
+      // Call when IP address has been obtained
+      void onIp(IpAddress ip, IpAddress mask, IpAddress gateway)
+      {
+         // ...
 
-   // Call when IP address has been obtained
-   void onIp(IpAddress ip, IpAddress mask, IpAddress gateway)
-   {
-      // ...
+         /* Use UPnP to auto-discover all DIAL-enabled servers */
+         Dial::discover(controlPoint, [](Dial::Client& client) {
+            // Are we looking for a specific device? Can match on friendlyName, UDN, etc.
+            if(client.friendlyName() == F("FriendlyNameToFind")) {
+               // Take a reference to the device
+               myClient = &client;
 
-      /* The command below will use UPnP to auto-discover a DIAL enabled server */
-      client.connect(onConnected);
+               // Get an app and do something...
+               auto& app = myClient->getApp("YouTube");
 
-      // ...
-   }
+               // Keep this device
+               return true;
+            }
 
+            // Don't want this device, destroy it
+            return false;
+         });
+
+         // ...
+      }
+   
 See the :sample:`DIAL_Client` sample application.
 
 API Documentation
 -----------------
 
-.. doxygennamespace:: DIAL
+.. doxygennamespace:: Dial
+   :members:
